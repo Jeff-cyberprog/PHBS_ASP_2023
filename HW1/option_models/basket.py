@@ -48,7 +48,7 @@ def basket_price_mc_cv(
         strike, spot, vol, weights, texp, cor_m, intr, divr, cp)
     '''
     price3 = basket_price_norm_analytic(
-        strike, spot, vol, weights, texp, cor_m, intr, divr, cp)
+        strike, spot, vol*spot, weights, texp, cor_m, intr, divr, cp)
     
     # return two prices: without and with CV
     return np.array([price1, price1 - (price2 - price3)])
@@ -116,11 +116,12 @@ def basket_price_norm_analytic(
 
     div_fac = np.exp(-texp*divr)
     disc_fac = np.exp(-texp*intr)
-    forward = spot / disc_fac * div_fac
+    forward = spot / disc_fac * div_fac @ weights
 
     cov_m = vol * cor_m * vol[:,None]
+    cov_w = weights@cov_m@weights.T
 
-    norm=pf.Norm(cov_m,intr=intr,divr=divr)
+    norm=pf.Norm(np.sqrt(cov_w))
     price=norm.price(strike,forward,texp,cp=cp)
     
-    return disc_fac * price
+    return price
